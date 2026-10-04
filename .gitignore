@@ -1,0 +1,25 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cryptographic Keys (DO NOT COMMIT TO GITHUB)
+keys/*.pem
+keys/private_key.pem
+keys/public_key.pem
+
+# Encrypted Packages and Demo Files
+*.enc
+demo_files/
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# IDE / System metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

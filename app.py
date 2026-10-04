@@ -12,6 +12,7 @@ and Network Security mini project:
 
 import os
 import sys
+import time
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from datetime import datetime
@@ -201,6 +202,15 @@ class HybridCryptoApp(tk.Tk):
             fg=self.col_text_sub
         )
         lbl_course.pack(anchor="w", pady=(1, 0))
+
+        # Project Demo Button
+        btn_demo = ttk.Button(
+            header_bar,
+            text="⚡ Run Project Demo",
+            style="ActionSuccess.TButton",
+            command=self.handle_run_project_demo
+        )
+        btn_demo.pack(side="right", padx=(10, 0), pady=5)
 
         # About Button
         btn_about = ttk.Button(
@@ -489,7 +499,8 @@ class HybridCryptoApp(tk.Tk):
             priv_path, pub_path = generate_rsa_key_pair(self.keys_dir, key_size=2048)
             self.refresh_key_status()
 
-            self.set_status("RSA-2048 key pair successfully generated!")
+            self.set_status("RSA key pair generated successfully.")
+            self.log_message("RSA key pair generated successfully.", "SUCCESS")
             self.log_message(f"Private Key saved: {os.path.basename(priv_path)} (PKCS#8 PEM)", "SUCCESS")
             self.log_message(f"Public Key saved: {os.path.basename(pub_path)} (SPKI PEM)", "SUCCESS")
 
@@ -607,7 +618,8 @@ class HybridCryptoApp(tk.Tk):
             # Auto-populate decryption box for testing convenience
             self.var_decrypt_file.set(out_file)
 
-            self.set_status(f"Successfully encrypted '{filename}' -> {os.path.basename(out_file)}")
+            self.set_status("File encrypted successfully.")
+            self.log_message("File encrypted successfully.", "SUCCESS")
             self.log_message("Generated fresh 256-bit AES session key & 12-byte nonce.", "INFO")
             self.log_message("Payload encrypted with AES-256-GCM (16-byte AEAD GMAC tag).", "INFO")
             self.log_message("AES session key encapsulated with RSA-2048-OAEP (SHA-256).", "INFO")
@@ -616,6 +628,8 @@ class HybridCryptoApp(tk.Tk):
                 f"({meta['encrypted_size_bytes']} bytes).",
                 "SUCCESS"
             )
+            self.log_message("Encrypted package created successfully.", "SUCCESS")
+            self.after(800, lambda: self.set_status("Encrypted package created successfully."))
 
             messagebox.showinfo(
                 "Encryption Successful",
@@ -699,7 +713,8 @@ class HybridCryptoApp(tk.Tk):
                 private_key_path=key_status["private_path"]
             )
 
-            self.set_status(f"Successfully recovered '{meta['original_filename']}'!")
+            self.set_status("File decrypted successfully.")
+            self.log_message("File decrypted successfully.", "SUCCESS")
             self.log_message("RSA private key unwrapped AES session key (OAEP-SHA256 verified).", "INFO")
             self.log_message("AES-GCM integrity authentication confirmed (Tag Valid).", "INFO")
             self.log_message(
@@ -707,6 +722,8 @@ class HybridCryptoApp(tk.Tk):
                 f"({meta['recovered_size_bytes']} bytes) -> {recovered_file}",
                 "SUCCESS"
             )
+            self.log_message("AES-GCM integrity verification successful.", "SUCCESS")
+            self.after(800, lambda: self.set_status("AES-GCM integrity verification successful."))
 
             messagebox.showinfo(
                 "Decryption Successful",
@@ -745,6 +762,216 @@ class HybridCryptoApp(tk.Tk):
             self.set_status(f"Decryption failure: {exc}")
             self.log_message(f"Unexpected error: {exc}", "ERROR")
             messagebox.showerror("Decryption Failed", f"An unexpected error occurred:\n{exc}")
+
+    # -----------------------------------------------------------------
+    # Event Handlers: Project Demonstration Workflow
+    # -----------------------------------------------------------------
+
+    def handle_run_project_demo(self):
+        """
+        Execute the complete 8-step project demonstration workflow:
+        1. Generate RSA Keys
+        2. Select a normal input file
+        3. Encrypt the file
+        4. Save the encrypted package as .enc
+        5. Select the .enc file
+        6. Decrypt it
+        7. Save the recovered file
+        8. Show successful AES-GCM integrity verification
+        """
+        confirm = messagebox.askyesno(
+            "Run Project Demonstration?",
+            "This workflow will run a complete, end-to-end demonstration of the Hybrid Encryption System:\n\n"
+            "1. Generate RSA Key Pair (RSA-2048-OAEP)\n"
+            "2. Select Normal Input File\n"
+            "3. Encrypt File (AES-256-GCM + RSA Key Encapsulation)\n"
+            "4. Save Encrypted Package (.enc)\n"
+            "5. Select .enc Package\n"
+            "6. Decrypt Package\n"
+            "7. Save Recovered File\n"
+            "8. Verify AES-GCM Cryptographic Integrity\n\n"
+            "Do you want to proceed?",
+            icon="question"
+        )
+        if not confirm:
+            return
+
+        self.clear_logs()
+        self.log_message("=== STARTING PROJECT DEMONSTRATION WORKFLOW ===", "INFO")
+        self.set_status("Starting Project Demonstration Workflow...")
+        self.update()
+        time.sleep(0.4)
+
+        demo_dir = os.path.join(self.app_dir, "demo_files")
+        os.makedirs(demo_dir, exist_ok=True)
+        sample_file_path = os.path.join(demo_dir, "demo_sample.txt")
+        enc_file_path = os.path.join(demo_dir, "demo_sample.txt.enc")
+        recovered_file_path = os.path.join(demo_dir, "demo_sample_recovered.txt")
+
+        # -------------------------------------------------------------
+        # STEP 1: Generate RSA Keys
+        # -------------------------------------------------------------
+        self.log_message("Step 1: Generating RSA-2048 key pair...", "INFO")
+        try:
+            priv_path, pub_path = generate_rsa_key_pair(self.keys_dir, key_size=2048)
+            self.refresh_key_status()
+
+            if not (os.path.isfile(priv_path) and os.path.isfile(pub_path)):
+                raise CryptoError("RSA key pair files were not found after generation.")
+
+            self.set_status("RSA key pair generated successfully.")
+            self.log_message("RSA key pair generated successfully.", "SUCCESS")
+            self.update()
+            time.sleep(0.6)
+        except Exception as exc:
+            self.set_status(f"Demo Step 1 Failed: {exc}")
+            self.log_message(f"Demo failed at Step 1: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 1 (Generate RSA Keys) failed:\n\n{exc}")
+            return
+
+        # -------------------------------------------------------------
+        # STEP 2: Select a normal input file
+        # -------------------------------------------------------------
+        self.log_message("Step 2: Selecting input file...", "INFO")
+        try:
+            sample_content = (
+                "HYBRID ENCRYPTION SYSTEM DEMONSTRATION FILE\n"
+                "====================================================\n"
+                "Cryptographic Specifications:\n"
+                "- Asymmetric Key: RSA-2048 with OAEP-SHA256\n"
+                "- Symmetric Cipher: AES-256 in Galois/Counter Mode (GCM)\n"
+                "- Session Nonce: 12-byte cryptographically secure random value\n"
+                "- Authentication Tag: 16-byte AEAD GMAC Tag\n\n"
+                "This sample text file verifies end-to-end encryption, storage,\n"
+                "decryption, and cryptographic integrity verification.\n"
+            )
+            with open(sample_file_path, "w", encoding="utf-8") as f:
+                f.write(sample_content)
+
+            self.var_encrypt_file.set(sample_file_path)
+            self.set_status(f"Selected file to encrypt: {os.path.basename(sample_file_path)}")
+            self.log_message(f"Selected input file: {sample_file_path}", "INFO")
+            self.update()
+            time.sleep(0.6)
+        except Exception as exc:
+            self.set_status(f"Demo Step 2 Failed: {exc}")
+            self.log_message(f"Demo failed at Step 2: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 2 (Select Input File) failed:\n\n{exc}")
+            return
+
+        # -------------------------------------------------------------
+        # STEP 3: Encrypt the file
+        # -------------------------------------------------------------
+        self.log_message("Step 3: Encrypting file with AES-256-GCM + RSA-2048-OAEP...", "INFO")
+        try:
+            out_file, meta = encrypt_file(
+                input_file_path=sample_file_path,
+                output_file_path=enc_file_path,
+                public_key_path=pub_path
+            )
+            self.set_status("File encrypted successfully.")
+            self.log_message("File encrypted successfully.", "SUCCESS")
+            self.update()
+            time.sleep(0.6)
+        except Exception as exc:
+            self.set_status(f"Demo Step 3 Failed: {exc}")
+            self.log_message(f"Demo failed at Step 3: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 3 (Encrypt File) failed:\n\n{exc}")
+            return
+
+        # -------------------------------------------------------------
+        # STEP 4: Save the encrypted package as .enc
+        # -------------------------------------------------------------
+        self.log_message("Step 4: Saving encrypted package as .enc...", "INFO")
+        try:
+            if not os.path.isfile(enc_file_path):
+                raise CryptoError("Encrypted package (.enc) was not found on disk.")
+
+            self.set_status("Encrypted package created successfully.")
+            self.log_message(f"Encrypted package created successfully: {os.path.basename(enc_file_path)}", "SUCCESS")
+            self.update()
+            time.sleep(0.6)
+        except Exception as exc:
+            self.set_status(f"Demo Step 4 Failed: {exc}")
+            self.log_message(f"Demo failed at Step 4: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 4 (Save .enc Package) failed:\n\n{exc}")
+            return
+
+        # -------------------------------------------------------------
+        # STEP 5: Select the .enc file
+        # -------------------------------------------------------------
+        self.log_message("Step 5: Selecting .enc file for decryption...", "INFO")
+        try:
+            self.var_decrypt_file.set(enc_file_path)
+            self.set_status(f"Encrypted package selected: {os.path.basename(enc_file_path)}")
+            self.log_message(f"Selected encrypted package: {enc_file_path}", "INFO")
+            self.update()
+            time.sleep(0.6)
+        except Exception as exc:
+            self.set_status(f"Demo Step 5 Failed: {exc}")
+            self.log_message(f"Demo failed at Step 5: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 5 (Select .enc File) failed:\n\n{exc}")
+            return
+
+        # -------------------------------------------------------------
+        # STEP 6: Decrypt it
+        # -------------------------------------------------------------
+        self.log_message("Step 6: Decrypting package using RSA private key & AES-256-GCM...", "INFO")
+        try:
+            if os.path.isfile(recovered_file_path):
+                os.remove(recovered_file_path)
+
+            recovered_file, dec_meta = decrypt_file(
+                encrypted_file_path=enc_file_path,
+                output_file_path=recovered_file_path,
+                private_key_path=priv_path
+            )
+            self.set_status("File decrypted successfully.")
+            self.log_message("File decrypted successfully.", "SUCCESS")
+            self.update()
+            time.sleep(0.6)
+        except Exception as exc:
+            self.set_status(f"Demo Step 6 Failed: {exc}")
+            self.log_message(f"Demo failed at Step 6: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 6 (Decrypt File) failed:\n\n{exc}")
+            return
+
+        # -------------------------------------------------------------
+        # STEP 7: Save recovered file & STEP 8: AES-GCM Integrity Verification
+        # -------------------------------------------------------------
+        self.log_message("Step 7 & 8: Verifying recovered file content and AES-GCM AEAD tag...", "INFO")
+        try:
+            if not os.path.isfile(recovered_file_path):
+                raise CryptoError("Recovered file was not found on disk.")
+
+            with open(recovered_file_path, "r", encoding="utf-8") as f:
+                recovered_text = f.read()
+
+            if recovered_text != sample_content:
+                raise CryptoError("Decrypted content does not match original plaintext content!")
+
+            self.set_status("AES-GCM integrity verification successful.")
+            self.log_message("AES-GCM integrity verification successful.", "SUCCESS")
+            self.log_message("=== PROJECT DEMONSTRATION WORKFLOW COMPLETED SUCCESSFULLY ===", "SUCCESS")
+            self.update()
+
+            messagebox.showinfo(
+                "Project Demonstration Complete",
+                "Project Demonstration Workflow Completed Successfully!\n\n"
+                "Sequence Executed:\n"
+                "1. RSA key pair generated successfully.\n"
+                "2. Selected input file: demo_sample.txt\n"
+                "3. File encrypted successfully.\n"
+                "4. Encrypted package created successfully (.enc).\n"
+                "5. Selected .enc package for decryption.\n"
+                "6. File decrypted successfully.\n"
+                "7. Recovered file saved: demo_sample_recovered.txt\n"
+                "8. AES-GCM integrity verification successful."
+            )
+        except Exception as exc:
+            self.set_status(f"Demo Verification Failed: {exc}")
+            self.log_message(f"Demo failed at Step 7/8: {exc}", "ERROR")
+            messagebox.showerror("Demo Error", f"Step 7/8 (Verification) failed:\n\n{exc}")
 
     # -----------------------------------------------------------------
     # Event Handlers: About System Dialog
